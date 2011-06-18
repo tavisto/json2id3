@@ -1,3 +1,10 @@
 
 C++ Id3 Tag utility to write id3 tags to an audio file. 
 The tags can be read from a json file.
+
+This requires both taglib and jsonlib. 
+
+TagLib: http://developer.kde.org/~wheeler/taglib.html
+jsonlib: https://github.com/thanatos/libjson
+
+Thanks to both those projects to make this one possible.

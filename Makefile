@@ -4,7 +4,7 @@ CFLAGS=-Wall -Wextra -fPIC \
 	-I ..//libjson/include 
 
 LDFLAGS=-L /usr/lib64 -l tag \
-		-L ../libjson/src -l json -Wl,-rpath=../libjson/src
+		-L /home/taitken/cpp/libjson/src -l json -Wl,-rpath=/home/taitken/cpp/libjson/src
 
 DEBUG=-g
 
@@ -27,8 +27,6 @@ clean-aif:
 
 clean-json:
 	cp test/clean/clean.json test/test.json
-	cp test/clean/code_tags.json test/code_tags.json
 
 test: clean all 
 	./bin/tagger --file test/test.aif --tags test/test.json
-	./bin/tagger --file test/test.aif --tags test/code_tags.json

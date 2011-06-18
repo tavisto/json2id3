@@ -6,6 +6,9 @@ using namespace std;
 /* TagLib */
 #include <aifffile.h>
 #include <id3v2header.h>
+#include <id3v2tag.h>
+#include <id3v2frame.h>
+#include <textidentificationframe.h>
 #include <tag.h>
 #include <fileref.h>
 #include <tbytevector.h>
@@ -84,41 +87,66 @@ int main(int argc, char **argv)
         if (i.key() == "tags") {
             json::Object tags_obj = dynamic_cast<const json::Object &>(i.value());
             for (json::Object::const_iterator j = tags_obj.begin(); j != tags_obj.end(); ++j) {
+                string tag_name = j.key();
                 if (j->type() == json::TYPE_STRING) {
                     string tag_value = dynamic_cast<const json::String &>(*j).value();
-                    cout << j.key() << endl;
-                    if (j.key() == "COM") {
-                        f.tag()->setAlbum(tag_value);
+                    cout << tag_name << endl;
+                    if (tag_name == "COMM") {
+                        f.tag()->setComment(tag_value);
                         cout << "Setting Comment(COM): " << tag_value << endl;
                     }
-                    if (j.key() == "GENRE") {
-                        f.tag()->setAlbum(tag_value);
+                    if (tag_name == "GENR") {
+                        f.tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
                     }
-                    if (j.key() == "TALB") {
+                    if (tag_name == "TALB") {
                         f.tag()->setAlbum(tag_value);
                         cout << "Setting Album(TALB): " << tag_value << endl;
                     }
-                    if (j.key() == "TPE1") {
+                    if (tag_name == "TPE1") {
                         f.tag()->setArtist(tag_value);
                         cout << "Setting Artist(TPE1): " << tag_value << endl;
+                    }
+                    if (tag_name == "TPE4") {
+                        TagLib::ID3v2::Tag* id3v2Tag;
+                        TagLib::ByteVector remixer;
+                        remixer.setData(tag_name.c_str());
+                        cout << remixer << endl;
+                        TagLib::ID3v2::TextIdentificationFrame frame(remixer, TagLib::String::Latin1);
+                        id3v2Tag->addFrame(&frame);
+                        cout << "Setting Artist(TPE1): " << tag_value << endl;
+                    }
+                    if (tag_name == "TIT2") {
+                        f.tag()->setTitle(tag_value);
+                        cout << "Setting TITLE(TIT2): " << tag_value << endl;
+                    }
+                    if (tag_name == "TPUB") {
+                        cout << "Setting Publisher(TPUB): " << tag_value << endl;
+                    }
+                    if (tag_name == "TKEY") {
+                        cout << "Setting Key(TKEY): " << tag_value << endl;
+                    }
+                    if (tag_name == "TFLT") {
+                        cout << "Setting Filetype(TFLT): " << tag_value << endl;
+                    }
+                    if (tag_name == "TCON") {
+                        cout << "Setting Content TYpe(TCON): " << tag_value << endl;
                     }
                 }
                 if (j->type() == json::TYPE_INTEGER) {
                     int tag_value = dynamic_cast<const json::Integer &>(*j).value;
-                    cout << j.key() << endl;
-                    if (j.key() == "ryear") {
-                        f.tag()->setYear(tag_value);
-                        cout << "Setting year: " << tag_value << endl;
+                    cout << tag_name << endl;
+                    if (tag_name == "TDOR") {
+                        cout << "Setting release year(TDOR): " << tag_value << endl;
                     }
-                    if (j.key() == "year") {
+                    if (tag_name == "TDRC") {
                         f.tag()->setYear(tag_value);
-                        cout << "Setting year: " << tag_value << endl;
+                        cout << "Setting year(TDRC): " << tag_value << endl;
                     }
-                    if (j.key() == "TBPM") {
+                    if (tag_name == "TBPM") {
                         cout << "Setting bpm(TBPM): " << tag_value << endl;
                     }
-                    if (j.key() == "TRCK") {
+                    if (tag_name == "TRCK") {
                         f.tag()->setTrack(tag_value);
                         cout << "Setting track (TRCK): " << tag_value << endl;
                     }

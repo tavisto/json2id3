@@ -1,20 +1,21 @@
 { 
     "tags": {
-        "artist": "Artist from Json",
-        "name": "Track Name",
-        "artist": "Artist",
-        "remixer": "Remixer",
-        "album": "Album from JSON",
-        "label": "Label",
-        "relaseyear": 2010,
-        "year": 2011,
-        "set": true,
-        "track": 1,
-        "isrc": "abcdefhigklmno",
-        "ctype": "Content Type",
-        "ftype": "File Type",
-        "genre": "Genre",
-        "bpm": 123,
-        "key": "AM"
+        "TPE1": "Artist from Json",
+        "TIT2": "Track Name (Remix)",
+        "TPE1": "Artist",
+        "TPE4": "Remixer",
+        "TALB": "Album from JSON",
+        "TPUB": "Label",
+        "TDOR": 2010,
+        "TDRC": 2011,
+        "TPOS": 1,
+        "TRCK": 1,
+        "TSRC": "abcdefhigklmno",
+        "TCON": "Content Type",
+        "TFLT": "File Type",
+        "TBPM": 123,
+        "TKEY": "F#",
+        "GENR": "Genre",
+        "COMM": "Some comment"
     }
 }
