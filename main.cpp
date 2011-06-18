@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <iostream>
+#include <sstream>
 #include <fstream>
 using namespace std;
 
@@ -78,8 +79,12 @@ void print_file_info(string file_name)
 
 int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, string tag_value)
 {
-    TagLib::ByteVector id(tag_name.c_str(), 4);
+    TagLib::ByteVector id(tag_name.c_str(), 4); // Only use the first 4 chars for the id
     cout << "Tagging " << id << endl;
+
+    // Clean up old frames before replacing it
+    f->tag()->removeFrames(id); 
+
     TagLib::ID3v2::Frame* frame;
     frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
     if( !frame)
@@ -94,10 +99,18 @@ int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, string tag_value)
 
 int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, int tag_value)
 {
-    // Conversion from integer to string before tagging
-    char numstr[21]; // Enough to hold all numbers up to 64-bits;
-    sprintf(numstr, "%d",tag_value);
-    return add_tag(f, tag_name, numstr);
+    stringstream ss;
+    ss << tag_value;
+    return add_tag(f, tag_name, ss.str());
+}
+
+void remove_all_frames(TagLib::RIFF::AIFF::File* f)
+{
+    const TagLib::ID3v2::FrameList& frameList = f->tag()->frameList();
+    for (TagLib::ID3v2::FrameList::ConstIterator it = frameList.begin();
+         it != frameList.end();) {
+        f->tag()->removeFrame(*it++, true);
+    }
 }
 
 
@@ -140,6 +153,7 @@ int main(int argc, char **argv)
     json::Object *obj = dynamic_cast<json::Object *>(v);
 
     TagLib::RIFF::AIFF::File f(file_name.c_str());
+    remove_all_frames(&f);
 
     for (json::Object::const_iterator i = obj->begin(); i != obj->end(); ++i) {
         if (i.key() == "tags") {
@@ -149,66 +163,25 @@ int main(int argc, char **argv)
                 if (j->type() == json::TYPE_STRING) {
                     string tag_value = dynamic_cast<const json::String &>(*j).value();
                     cout << tag_name << endl;
+                    // Special case for comment and genres
                     if (tag_name == "COMM") {
                         f.tag()->setComment(tag_value);
                         cout << "Setting Comment(COM): " << tag_value << endl;
                     }
-                    if (tag_name == "GENR") {
+                    else if (tag_name == "GENR") {
                         f.tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
                     }
-                    if (tag_name == "TALB") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Album(TALB): " << tag_value << endl;
-                    }
-                    if (tag_name == "TPE1") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Artist(TPE1): " << tag_value << endl;
-                    }
-                    if (tag_name == "TPE4") {
-                        cout << "Setting Remixer(TPE4): " << tag_value << endl;
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Done Setting Remixer(TPE4): " << tag_value << endl;
-                    }
-                    if (tag_name == "TIT2") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting TITLE(TIT2): " << tag_value << endl;
-                    }
-                    if (tag_name == "TPUB") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Publisher(TPUB): " << tag_value << endl;
-                    }
-                    if (tag_name == "TKEY") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Key(TKEY): " << tag_value << endl;
-                    }
-                    if (tag_name == "TFLT") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Filetype(TFLT): " << tag_value << endl;
-                    }
-                    if (tag_name == "TCON") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting Content TYpe(TCON): " << tag_value << endl;
+                    else if (add_tag(&f, tag_name, tag_value))
+                    {
+                        cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
+                        return 1;
                     }
                 }
                 if (j->type() == json::TYPE_INTEGER) {
                     int tag_value = dynamic_cast<const json::Integer &>(*j).value;
                     cout << tag_name << endl;
-                    if (tag_name == "TDOR") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting release year(TDOR): " << tag_value << endl;
-                    }
-                    if (tag_name == "TDRC") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting year(TDRC): " << tag_value << endl;
-                    }
-                    if (tag_name == "TBPM") {
-                        cout << "Setting bpm(TBPM): " << tag_value << endl;
-                    }
-                    if (tag_name == "TRCK") {
-                        add_tag(&f, tag_name, tag_value);
-                        cout << "Setting track (TRCK): " << tag_value << endl;
-                    }
+                    add_tag(&f, tag_name, tag_value);
                 }
             }
         }
