@@ -60,7 +60,7 @@ edit_cache/fast: edit_cache
 # Special rule for the target package
 package: preinstall
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool..."
-	/usr/bin/cpack --config ./CPackConfig.cmake
+	cd /home/taitken/cpp/taglib-tagger && /usr/bin/cpack --config ./CPackConfig.cmake
 .PHONY : package
 
 # Special rule for the target package
@@ -70,7 +70,7 @@ package/fast: package
 # Special rule for the target package_source
 package_source:
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Run CPack packaging tool for source..."
-	/usr/bin/cpack --config ./CPackSourceConfig.cmake /home/taitken/cpp/taglib-tagger/CPackSourceConfig.cmake
+	cd /home/taitken/cpp/taglib-tagger && /usr/bin/cpack --config ./CPackSourceConfig.cmake /home/taitken/cpp/taglib-tagger/CPackSourceConfig.cmake
 .PHONY : package_source
 
 # Special rule for the target package_source
@@ -89,14 +89,14 @@ rebuild_cache/fast: rebuild_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/taitken/cpp/taglib-tagger/CMakeFiles /home/taitken/cpp/taglib-tagger/CMakeFiles/progress.marks
-	$(MAKE) -f CMakeFiles/Makefile2 all
+	cd /home/taitken/cpp/taglib-tagger && $(CMAKE_COMMAND) -E cmake_progress_start /home/taitken/cpp/taglib-tagger/CMakeFiles /home/taitken/cpp/taglib-tagger/src/CMakeFiles/progress.marks
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f CMakeFiles/Makefile2 src/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/taitken/cpp/taglib-tagger/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
 clean:
-	$(MAKE) -f CMakeFiles/Makefile2 clean
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f CMakeFiles/Makefile2 src/clean
 .PHONY : clean
 
 # The main clean target
@@ -105,31 +105,56 @@ clean/fast: clean
 
 # Prepare targets for installation.
 preinstall: all
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall
 
 # Prepare targets for installation.
 preinstall/fast:
-	$(MAKE) -f CMakeFiles/Makefile2 preinstall
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f CMakeFiles/Makefile2 src/preinstall
 .PHONY : preinstall/fast
 
 # clear depends
 depend:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
+	cd /home/taitken/cpp/taglib-tagger && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 1
 .PHONY : depend
 
-#=============================================================================
-# Target rules for targets named json2id3
+# Convenience name for target.
+src/CMakeFiles/json2id3.dir/rule:
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f CMakeFiles/Makefile2 src/CMakeFiles/json2id3.dir/rule
+.PHONY : src/CMakeFiles/json2id3.dir/rule
 
-# Build rule for target.
-json2id3: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 json2id3
+# Convenience name for target.
+json2id3: src/CMakeFiles/json2id3.dir/rule
 .PHONY : json2id3
 
 # fast build rule for target.
 json2id3/fast:
-	$(MAKE) -f src/CMakeFiles/json2id3.dir/build.make src/CMakeFiles/json2id3.dir/build
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f src/CMakeFiles/json2id3.dir/build.make src/CMakeFiles/json2id3.dir/build
 .PHONY : json2id3/fast
+
+main.o: main.cpp.o
+.PHONY : main.o
+
+# target to build an object file
+main.cpp.o:
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f src/CMakeFiles/json2id3.dir/build.make src/CMakeFiles/json2id3.dir/main.cpp.o
+.PHONY : main.cpp.o
+
+main.i: main.cpp.i
+.PHONY : main.i
+
+# target to preprocess a source file
+main.cpp.i:
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f src/CMakeFiles/json2id3.dir/build.make src/CMakeFiles/json2id3.dir/main.cpp.i
+.PHONY : main.cpp.i
+
+main.s: main.cpp.s
+.PHONY : main.s
+
+# target to generate assembly for a file
+main.cpp.s:
+	cd /home/taitken/cpp/taglib-tagger && $(MAKE) -f src/CMakeFiles/json2id3.dir/build.make src/CMakeFiles/json2id3.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -138,10 +163,13 @@ help:
 	@echo "... clean"
 	@echo "... depend"
 	@echo "... edit_cache"
+	@echo "... json2id3"
 	@echo "... package"
 	@echo "... package_source"
 	@echo "... rebuild_cache"
-	@echo "... json2id3"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 .PHONY : help
 
 
@@ -153,6 +181,6 @@ help:
 # No rule that depends on this can have commands that come from listfiles
 # because they might be regenerated.
 cmake_check_build_system:
-	$(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
+	cd /home/taitken/cpp/taglib-tagger && $(CMAKE_COMMAND) -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR) --check-build-system CMakeFiles/Makefile.cmake 0
 .PHONY : cmake_check_build_system
 

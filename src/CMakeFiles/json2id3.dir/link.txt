@@ -1,0 +1,1 @@
+/usr/bin/c++   -g -Wall   CMakeFiles/json2id3.dir/main.cpp.o  -o json2id3 -rdynamic -ltag /home/taitken/cpp/libjson/src/libjson.so -Wl,-rpath,/home/taitken/cpp/libjson/src 

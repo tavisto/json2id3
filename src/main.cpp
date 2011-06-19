@@ -5,12 +5,12 @@
 using namespace std;
 
 /* TagLib */
+#include <tag.h>
 #include <aifffile.h>
 #include <id3v2header.h>
 #include <id3v2tag.h>
 #include <id3v2frame.h>
 #include <textidentificationframe.h>
-#include <tag.h>
 #include <fileref.h>
 #include <tbytevector.h>
 

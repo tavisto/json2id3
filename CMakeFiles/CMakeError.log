@@ -1,0 +1,23 @@
+Performing C++ SOURCE FILE Test HAVE_TAGLIB_MP4_UINTTYPES failed with the following output:
+Change Dir: /home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp
+
+Run Build Command:/usr/bin/gmake "cmTryCompileExec/fast"
+/usr/bin/gmake -f CMakeFiles/cmTryCompileExec.dir/build.make CMakeFiles/cmTryCompileExec.dir/build
+gmake[1]: Entering directory `/home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp'
+/usr/bin/cmake -E cmake_progress_report /home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp/CMakeFiles 1
+Building CXX object CMakeFiles/cmTryCompileExec.dir/src.cxx.o
+/usr/bin/c++    -g -Wall  -DHAVE_TAGLIB_MP4_UINTTYPES   -I/usr/include/taglib -o CMakeFiles/cmTryCompileExec.dir/src.cxx.o -c /home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp/src.cxx
+/home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp/src.cxx: In function ‘int main()’:
+/home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp/src.cxx:4:8: error: ‘class TagLib::MP4::Item’ has no member named ‘toUInt’
+gmake[1]: Leaving directory `/home/taitken/cpp/taglib-tagger/CMakeFiles/CMakeTmp'
+gmake[1]: *** [CMakeFiles/cmTryCompileExec.dir/src.cxx.o] Error 1
+gmake: *** [cmTryCompileExec/fast] Error 2
+
+Source file was:
+#include <mp4file.h>
+int main() {
+  TagLib::MP4::Item item;
+  item.toUInt();
+  return 0;
+}
+
