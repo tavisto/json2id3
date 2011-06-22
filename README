@@ -1,0 +1,3 @@
+
+C++ Id3 Tag utility to write id3 tags to an audio file. 
+The tags can be read from a json file.
