@@ -1,0 +1,4 @@
+*test/test.aif
+*.o
+bin/*
+*.swp

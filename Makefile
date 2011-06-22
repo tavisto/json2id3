@@ -1,17 +1,15 @@
 CC=g++
-CFLAGS=-Wall -Wextra  \
-	-I /Users/tavis.aitken/SourceCode/aif-project/cpp/taglib-1.7/include \
-	-I /Users/tavis.aitken/SourceCode/aif-project/cpp/taglib-1.7 \
-	-I /Users/tavis.aitken/SourceCode/aif-project/cpp/jsoncpp-src-0.5.0/include
-	#-I /Users/tavis.aitken/SourceCode/aif-project/cpp/libjson/include \
+CFLAGS=-Wall -Wextra -fPIC \
+	-I /usr/include/taglib \
+	-I ..//libjson/include 
 
-LDFLAGS=-L /Users/tavis.aitken/SourceCode/aif-project/cpp/taglib-1.7/taglib -l tag \
-		-L /Users/tavis.aitken/SourceCode/aif-project/cpp/jsoncpp-src-0.5.0/libs/linux-gcc-4.2.1 -l json_linux-gcc-4.2.1_libmt
-		#-L /Users/tavis.aitken/SourceCode/aif-project/cpp/libjson/src -l json \
-		
+LDFLAGS=-L /usr/lib64 -l tag \
+		-L ../libjson/src -l json -Wl,-rpath=../libjson/src
+
+DEBUG=-g
 
 all: main.o 
-	$(CC) $(LDFLAGS) main.o -o tagger
+	$(CC) $(LDFLAGS) main.o -o bin/tagger
 
 main.o: main.cpp
 	$(CC) $(CFLAGS) -c main.cpp
@@ -22,13 +20,15 @@ clean-o:
 	rm -vf *.o 
 
 clean-bin:
-	rm -vf tagger 
+	rm -vf bin/*
 
 clean-aif:
 	cp test/clean/clean.aif test/test.aif
 
 clean-json:
 	cp test/clean/clean.json test/test.json
+	cp test/clean/code_tags.json test/code_tags.json
 
-run: clean all 
-	./tagger --file test/test.aif --tags test/test.json
+test: clean all 
+	./bin/tagger --file test/test.aif --tags test/test.json
+	./bin/tagger --file test/test.aif --tags test/code_tags.json

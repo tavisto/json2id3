@@ -1,1 +1,20 @@
-{ "tags": {"artist": "Artist from Json", "album": "Album from JSON"} }
+{ 
+    "tags": {
+        "artist": "Artist from Json",
+        "name": "Track Name",
+        "artist": "Artist",
+        "remixer": "Remixer",
+        "album": "Album from JSON",
+        "label": "Label",
+        "relaseyear": 2010,
+        "year": 2011,
+        "set": true,
+        "track": 1,
+        "isrc": "abcdefhigklmno",
+        "ctype": "Content Type",
+        "ftype": "File Type",
+        "genre": "Genre",
+        "bpm": 123,
+        "key": "AM"
+    }
+}
