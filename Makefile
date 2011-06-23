@@ -4,7 +4,7 @@ CFLAGS=-Wall -Wextra -fPIC \
 	-I ..//libjson/include 
 
 LDFLAGS=-L /usr/lib64 -l tag \
-		-L /home/taitken/cpp/libjson/src -l json -Wl,-rpath=/home/taitken/cpp/libjson/src
+		-L ../libjson/src -l json -Wl,-rpath=../libjson/src
 
 DEBUG=-g
 
