@@ -4,3 +4,7 @@ bin/*
 *.swp
 test/*.aif
 test/*.json
+*CmakeCache*
+*CmakeFiles*
+*CPack*
+*Makefile*
