@@ -25,6 +25,10 @@ static struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
+/** Read the tags from a json file
+ * @param string file_name
+ * return string
+ */
 string read_tag_file(string file_name)
 {
     ifstream input(file_name.c_str());
@@ -42,14 +46,22 @@ string read_tag_file(string file_name)
     return contents;
 }
 
+/** Print usage info
+ * @param char **argv
+ * return void
+ */
 void usage(char **argv)
 {
     cerr << "Usage: ./" << *argv << " -h --help -f --file [file] -t --tags [file]" << endl;
 }
 
+/** Print simple info from the audio file
+ * @param string file_name
+ * return void
+ */
 void print_file_info(string file_name)
 {
-    TagLib::RIFF::AIFF::File f(file_name.c_str());
+    TagLib::FileRef f(file_name.c_str());
     if(f.tag()) {
 
         TagLib::Tag *tag = f.tag();
@@ -104,6 +116,10 @@ int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, int tag_value)
     return add_tag(f, tag_name, ss.str());
 }
 
+/** Remove all existing frames to ensure only one id3 tag block
+ * @param TagLib::RIFF::AIFF::File* f
+ * return void
+ */
 void remove_all_frames(TagLib::RIFF::AIFF::File* f)
 {
     const TagLib::ID3v2::FrameList& frameList = f->tag()->frameList();
@@ -113,6 +129,11 @@ void remove_all_frames(TagLib::RIFF::AIFF::File* f)
     }
 }
 
+/** Parse all the tags from the json file and tag them into the audio file
+ * @parm json::Object* json_obj
+ * @param Taglib::RIFF::AIFF::File* f
+ * return int
+ */
 int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
 {
     for (json::Object::const_iterator i = json_obj->begin(); i != json_obj->end(); ++i) {
@@ -190,12 +211,18 @@ int main(int argc, char **argv)
 
     print_file_info(file_name);
     string json_tags = read_tag_file(tag_file);
+    try {
+        json::Value *json_v = json::parse(json_tags);
+        json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
 
-    json::Value *json_v = json::parse(json_tags);
-    json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
+        TagLib::RIFF::AIFF::File f(file_name.c_str());
+        remove_all_frames(&f);
 
-    TagLib::RIFF::AIFF::File f(file_name.c_str());
-    remove_all_frames(&f);
-
-    return tag_from_json(json_obj, &f);
+        return tag_from_json(json_obj, &f);
+    }
+    catch (runtime_error& e)
+    {
+        cerr << "Unable to process file for tagging. " << endl;
+        return 1;
+    }
 }
