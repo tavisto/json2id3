@@ -6,7 +6,6 @@ set(VERSION 0.1.0)
 set(AUTHOR "Tavis AItken <tavisto@tavisto.net>") 
 set(PACKAGE_DESCRIPTION "Utility to embed id3 tags into media from a json config file")
 
-
 set(CPACK_PACKAGE_CONTACT ${AUTHOR})
 set(CPACK_PACKAGE_VERSION ${VERSION})
 set(CPACK_PACKAGE_DESCRIPTION ${PACKAGE_DESCRIPTION})
@@ -14,10 +13,15 @@ set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${PACKAGE_DESCRIPTION})
 set(CPACK_DEBIAN_PACKAGE_SECTION "Development")
 include(CPack)
 
-set(CMAKE_CXX_FLAGS "-g -Wall")
+# Appends the cmake/modules path inside the MAKE_MODULE_PATH variable which stores the
+# directories of additional CMake modules (eg MacroOutOfSourceBuild.cmake):
+set(CMAKE_MODULE_PATH ${json2id3_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
 
-#enable_testing()
+# The macro below forces the build directory to be different from source directory
+include(MacroOutOfSourceBuild)
+macro_ensure_out_of_source_build("${PROJECT_NAME} requires an out of source build. Please, see README.")
 
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -fPIC")
 
 set(WITH_TAGLIB ON CACHE BOOL "build with TagLib")
 set(WITH_LIBJSON ON CACHE BOOL "build with libjson")
@@ -61,23 +65,17 @@ if (TAGLIB_LIBRARIES AND TAGLIB_CFLAGS)
   set(CMAKE_REQUIRED_DEFINITIONS ${_CMAKE_REQUIRED_DEFINITIONS_TMP})
 endif (TAGLIB_LIBRARIES AND TAGLIB_CFLAGS)
 
-set(JSON_LIBRARIES)
+set(LIBJSON_LIBRARIES)
 if(WITH_LIBJSON)
-    find_library(LIBJSON_LIBRARIES NAMES tag
-        PATHS
-        /usr/lib
-        /usr/local/lib
-        /home/taitken/cpp/libjson/src/
-        )
+    find_library(LIBJSON_LIBRARIES NAMES json)
     find_path(LIBJSON_INCLUDE_DIR json.h PATHS 
         /usr/include/json
         /usr/local/include/json
-        $ENV{INCLUDE}/json
         )
 
   if (LIBJSON_LIBRARIES AND LIBJSON_INCLUDE_DIR)
       set(LIBJSON_CFLAGS -I${LIBJSON_INCLUDE_DIR})
-      message(STATUS "libjson found: ${LIBJSON_LIBRARIES} ${LIBJSON_CFLAGE}")
+      message(STATUS "libjson found: ${LIBJSON_LIBRARIES} ${LIBJSON_CFLAGS}")
       set(HAVE_LIBJSON 1)
       set(LIBJSON_FOUND TRUE)
   else (LIBJSON_LIBRARIES AND LIBJSON_INCLUDE_DIR)
@@ -85,12 +83,5 @@ if(WITH_LIBJSON)
   endif (LIBJSON_LIBRARIES AND LIBJSON_INCLUDE_DIR)
 endif(WITH_LIBJSON)
 
-
 add_definitions(${TAGLIB_CFLAGS} ${LIBJSON_CFLAGS})
-
-
-#add_subdirectory(doc)
-#add_subdirectory(example)
-#add_subdirectory(include)
 add_subdirectory(src)
-#add_subdirectory(test)

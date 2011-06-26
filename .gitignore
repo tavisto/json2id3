@@ -1,6 +1,6 @@
 *test/test.aif
 *.o
-bin/*
+build
 *.swp
 test/*.aif
 test/*.json

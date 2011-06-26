@@ -113,6 +113,43 @@ void remove_all_frames(TagLib::RIFF::AIFF::File* f)
     }
 }
 
+int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
+{
+    for (json::Object::const_iterator i = json_obj->begin(); i != json_obj->end(); ++i) {
+        if (i.key() == "tags") {
+            json::Object tags_obj = dynamic_cast<const json::Object &>(i.value());
+            for (json::Object::const_iterator j = tags_obj.begin(); j != tags_obj.end(); ++j) {
+                string tag_name = j.key();
+                if (j->type() == json::TYPE_STRING) {
+                    string tag_value = dynamic_cast<const json::String &>(*j).value();
+                    cout << tag_name << endl;
+                    // Special case for comment and genres
+                    if (tag_name == "COMM") {
+                        f->tag()->setComment(tag_value);
+                        cout << "Setting Comment(COM): " << tag_value << endl;
+                    }
+                    else if (tag_name == "GENR") {
+                        f->tag()->setGenre(tag_value);
+                        cout << "Setting GENRE: " << tag_value << endl;
+                    }
+                    else if (add_tag(f, tag_name, tag_value))
+                    {
+                        cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
+                        return 1;
+                    }
+                }
+                if (j->type() == json::TYPE_INTEGER) {
+                    int tag_value = dynamic_cast<const json::Integer &>(*j).value;
+                    cout << tag_name << endl;
+                    add_tag(f, tag_name, tag_value);
+                }
+            }
+        }
+    }
+    f->save();
+    return 0;
+}
+
 
 int main(int argc, char **argv)
 {
@@ -122,6 +159,11 @@ int main(int argc, char **argv)
     string file_name;
     string tag_file;
 
+    if(argc < 2)
+    {
+        usage(argv);
+        return 1;
+    }
     while(42) {
         return_code = getopt_long(argc, argv, "hf:o:a:", long_options, 
                         &option_index);
@@ -149,45 +191,11 @@ int main(int argc, char **argv)
     print_file_info(file_name);
     string json_tags = read_tag_file(tag_file);
 
-    json::Value *v = json::parse(json_tags);
-    json::Object *obj = dynamic_cast<json::Object *>(v);
+    json::Value *json_v = json::parse(json_tags);
+    json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
 
     TagLib::RIFF::AIFF::File f(file_name.c_str());
     remove_all_frames(&f);
 
-    for (json::Object::const_iterator i = obj->begin(); i != obj->end(); ++i) {
-        if (i.key() == "tags") {
-            json::Object tags_obj = dynamic_cast<const json::Object &>(i.value());
-            for (json::Object::const_iterator j = tags_obj.begin(); j != tags_obj.end(); ++j) {
-                string tag_name = j.key();
-                if (j->type() == json::TYPE_STRING) {
-                    string tag_value = dynamic_cast<const json::String &>(*j).value();
-                    cout << tag_name << endl;
-                    // Special case for comment and genres
-                    if (tag_name == "COMM") {
-                        f.tag()->setComment(tag_value);
-                        cout << "Setting Comment(COM): " << tag_value << endl;
-                    }
-                    else if (tag_name == "GENR") {
-                        f.tag()->setGenre(tag_value);
-                        cout << "Setting GENRE: " << tag_value << endl;
-                    }
-                    else if (add_tag(&f, tag_name, tag_value))
-                    {
-                        cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
-                        return 1;
-                    }
-                }
-                if (j->type() == json::TYPE_INTEGER) {
-                    int tag_value = dynamic_cast<const json::Integer &>(*j).value;
-                    cout << tag_name << endl;
-                    add_tag(&f, tag_name, tag_value);
-                }
-            }
-        }
-    }
-
-    f.save();
-
-    return 0;
+    return tag_from_json(json_obj, &f);
 }
