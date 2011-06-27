@@ -1,4 +1,5 @@
 #include <getopt.h>
+#include <string.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -10,6 +11,7 @@ using namespace std;
 #include <id3v2header.h>
 #include <id3v2tag.h>
 #include <id3v2frame.h>
+#include <attachedpictureframe.h>
 #include <textidentificationframe.h>
 #include <fileref.h>
 #include <tbytevector.h>
@@ -29,7 +31,7 @@ static struct option long_options[] = {
  * @param string file_name
  * return string
  */
-string read_tag_file(string file_name)
+string read_file(string file_name)
 {
     ifstream input(file_name.c_str());
     string line;
@@ -52,7 +54,7 @@ string read_tag_file(string file_name)
  */
 void usage(char **argv)
 {
-    cerr << "Usage: ./" << *argv << " -h --help -f --file [file] -t --tags [file]" << endl;
+    cerr << "Usage: " << *argv << " -h --help -f --file [file] -t --tags [file]" << endl;
 }
 
 /** Print simple info from the audio file
@@ -89,6 +91,42 @@ void print_file_info(string file_name)
 
 }
 
+string get_mime_type(string filename) {
+    const char *file_ext = strrchr(filename.c_str(), '.');
+    if (strcmp(".png", file_ext) == 0) {
+        return "image/png";
+    } else {
+        return "image/jpeg";
+    }
+}
+
+int add_image_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string image_file_path, unsigned char image_type) {
+    cout << "Setting " << tag_name << endl;
+    cout << tag_name << endl;
+    f->tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
+    string image_file = read_file(image_file_path);
+    string mime_type = get_mime_type(image_file_path);
+    cout << "Mime type: " << mime_type << endl;
+
+    TagLib::ByteVector image_data(image_file.c_str(), image_file.size());
+    cout << "Image size: " << image_data.size() << " bytes" << endl;
+
+    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame(image_data);
+    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
+    if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
+    } else {
+        cerr << "Unknown image type id: " << image_type << endl;
+        return 0;
+    }
+    if (!frame) {
+        cerr << "Image frame blew up!" << endl;
+        return 0;
+    }
+    f->tag()->addFrame(frame);
+    return 1;
+}
+
 int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, string tag_value)
 {
     TagLib::ByteVector id(tag_name.c_str(), 4); // Only use the first 4 chars for the id
@@ -102,11 +140,11 @@ int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, string tag_value)
     if( !frame)
     {
         cerr << "Frame blew up!" << endl;
-        return 1;
+        return 0;
     }
     frame->setText(tag_value);
     f->tag()->addFrame(frame);
-    return 0;
+    return 1;
 }
 
 int add_tag(TagLib::RIFF::AIFF::File* f,string tag_name, int tag_value)
@@ -153,24 +191,36 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                         f->tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
                     }
-                    else if (add_tag(f, tag_name, tag_value))
+                    else if (!add_tag(f, tag_name, tag_value))
                     {
                         cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
-                        return 1;
+                        return 0;
                     }
                 }
-                if (j->type() == json::TYPE_INTEGER) {
+                else if (j->type() == json::TYPE_INTEGER) {
                     int tag_value = dynamic_cast<const json::Integer &>(*j).value;
                     cout << tag_name << endl;
                     add_tag(f, tag_name, tag_value);
+                }
+                else if (j->type() == json::TYPE_OBJECT) {
+                    if (tag_name == "APIC") {
+                        json::Object apic = dynamic_cast<const json::Object &>(j.value());
+                        unsigned char image_type = dynamic_cast<const json::Integer &>(apic.getValue("type")).value;
+                        string image_file_path = dynamic_cast<const json::String &>(apic.getValue("file")).value();
+                        string mime_type = get_mime_type(image_file_path);
+
+                        if (!add_image_tag(f, tag_name, image_file_path, image_type)) {
+                            cerr << "Image frame blew up!" << endl;
+                            return 0;
+                        }
+                    }
                 }
             }
         }
     }
     f->save();
-    return 0;
+    return 1;
 }
-
 
 int main(int argc, char **argv)
 {
@@ -210,7 +260,7 @@ int main(int argc, char **argv)
     }
 
     print_file_info(file_name);
-    string json_tags = read_tag_file(tag_file);
+    string json_tags = read_file(tag_file);
     try {
         json::Value *json_v = json::parse(json_tags);
         json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
@@ -218,11 +268,13 @@ int main(int argc, char **argv)
         TagLib::RIFF::AIFF::File f(file_name.c_str());
         remove_all_frames(&f);
 
-        return tag_from_json(json_obj, &f);
+        if (tag_from_json(json_obj, &f)) {
+            return 0;
+        }
     }
     catch (runtime_error& e)
     {
         cerr << "Unable to process file for tagging. " << endl;
-        return 1;
     }
+    return 1;
 }
