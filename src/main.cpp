@@ -1,5 +1,6 @@
 #include <getopt.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
@@ -26,6 +27,22 @@ static struct option long_options[] = {
     {"tags",  required_argument, 0, 't'},
     {0, 0, 0, 0}
 };
+
+TagLib::ByteVector read_file_bytes(string file_name) {
+    TagLib::ByteVector bv;
+    struct stat details;
+    stat(file_name.c_str(), &details);
+    ifstream input(file_name.c_str());
+    if (input.is_open()) {
+        char* bytes = new char[details.st_size];
+        input.read(bytes, details.st_size);
+        bv.setData(bytes, details.st_size);
+        delete [] bytes;
+    } else {
+        cerr << "File not found: " << file_name << endl;
+    }
+    return bv;
+}
 
 /** Read the tags from a json file
  * @param string file_name
@@ -104,14 +121,13 @@ int add_image_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string image_fil
     cout << "Setting " << tag_name << endl;
     cout << tag_name << endl;
     f->tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
-    string image_file = read_file(image_file_path);
     string mime_type = get_mime_type(image_file_path);
+    TagLib::ByteVector image_data = read_file_bytes(image_file_path);
     cout << "Mime type: " << mime_type << endl;
-
-    TagLib::ByteVector image_data(image_file.c_str(), image_file.size());
     cout << "Image size: " << image_data.size() << " bytes" << endl;
 
-    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame(image_data);
+    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
+    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
     static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
     if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
         static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
