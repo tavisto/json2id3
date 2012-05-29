@@ -11,7 +11,7 @@ jsonlib: https://github.com/thanatos/libjson
 
 Thanks to both those projects to make this one possible.
 
-This project requres an 'out of source build'. 
+This project requires an 'out of source build'. 
 
 This means you need a build directory in order to build this. 
 
