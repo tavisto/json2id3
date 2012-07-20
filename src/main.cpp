@@ -145,6 +145,37 @@ int add_image_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string image_fil
     return 1;
 }
 
+/*!
+ * Overloaded add_image_tag for MP3 support.
+ */
+int add_image_tag(TagLib::MPEG::File* f, string tag_name, string image_file_path, unsigned char image_type) {
+    cout << "Setting " << tag_name << endl;
+    cout << tag_name << endl;
+    f->ID3v2Tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
+    string mime_type = get_mime_type(image_file_path);
+    TagLib::ByteVector image_data = read_file_bytes(image_file_path);
+    cout << "Mime type: " << mime_type << endl;
+    cout << "Image size: " << image_data.size() << " bytes" << endl;
+
+    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
+    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
+    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
+    if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
+    } else {
+        cerr << "Unknown image type id: " << image_type << endl;
+        return 0;
+    }
+    if (!frame) {
+        cerr << "Image frame blew up!" << endl;
+        return 0;
+    }
+    f->ID3v2Tag()->addFrame(frame);
+    return 1;
+}
+
+// ------------------- add_tag overloads ----------------------- //
+
 int add_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string tag_value)
 {
     TagLib::ByteVector id(tag_name.c_str(), 4); // Only use the first 4 chars for the id
@@ -172,6 +203,35 @@ int add_tag(TagLib::RIFF::AIFF::File* f, string tag_name, int tag_value)
     return add_tag(f, tag_name, ss.str());
 }
 
+int add_tag(TagLib::MPEG::File* f, string tag_name, string tag_value)
+{
+    TagLib::ByteVector id(tag_name.c_str(), 4); // Only use the first 4 chars for the id
+    cout << "Tagging " << id << endl;
+
+    // Clean up old frames before replacing it
+    f->ID3v2Tag()->removeFrames(id); 
+
+    TagLib::ID3v2::Frame* frame;
+    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
+    if( !frame)
+    {
+        cerr << "Frame blew up!" << endl;
+        return 0;
+    }
+    frame->setText(tag_value);
+    f->ID3v2Tag()->addFrame(frame);
+    return 1;
+}
+
+int add_tag(TagLib::MPEG::File* f, string tag_name, int tag_value)
+{
+    stringstream ss;
+    ss << tag_value;
+    return add_tag(f, tag_name, ss.str());
+}
+
+// ------------------ remove_frames overloads ----------- //
+
 /** Remove all existing frames to ensure only one id3 tag block
  * @param TagLib::RIFF::AIFF::File* f
  * return void
@@ -184,6 +244,23 @@ void remove_all_frames(TagLib::RIFF::AIFF::File* f)
         f->tag()->removeFrame(*it++, true);
     }
 }
+
+/** Remove all existing frames to ensure only one id3 tag block
+ * @param TagLib::MPEG::File* f
+ * return void
+ */
+void remove_all_frames(TagLib::MPEG::File* f)
+{
+    const TagLib::ID3v2::FrameList& frameList = f->ID3v2Tag()->frameList();
+    for (TagLib::ID3v2::FrameList::ConstIterator it = frameList.begin();
+         it != frameList.end();) {
+        f->ID3v2Tag()->removeFrame(*it++, true);
+    }
+}
+
+
+
+// ------------------- tag_from_json overloads ---------------- // 
 
 /** Parse all the tags from the json file and tag them into the audio file
  * @parm json::Object* json_obj
@@ -240,80 +317,12 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
     return 1;
 }
 
-// MP3
-
-int add_image_tag_mp3(TagLib::MPEG::File* f, string tag_name, string image_file_path, unsigned char image_type) {
-    cout << "Setting " << tag_name << endl;
-    cout << tag_name << endl;
-    f->ID3v2Tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
-    string mime_type = get_mime_type(image_file_path);
-    TagLib::ByteVector image_data = read_file_bytes(image_file_path);
-    cout << "Mime type: " << mime_type << endl;
-    cout << "Image size: " << image_data.size() << " bytes" << endl;
-
-    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
-    if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
-        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
-    } else {
-        cerr << "Unknown image type id: " << image_type << endl;
-        return 0;
-    }
-    if (!frame) {
-        cerr << "Image frame blew up!" << endl;
-        return 0;
-    }
-    f->ID3v2Tag()->addFrame(frame);
-    return 1;
-}
-
-int add_tag_mp3(TagLib::MPEG::File* f, string tag_name, string tag_value)
-{
-    TagLib::ByteVector id(tag_name.c_str(), 4); // Only use the first 4 chars for the id
-    cout << "Tagging " << id << endl;
-
-    // Clean up old frames before replacing it
-    f->ID3v2Tag()->removeFrames(id); 
-
-    TagLib::ID3v2::Frame* frame;
-    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
-    if( !frame)
-    {
-        cerr << "Frame blew up!" << endl;
-        return 0;
-    }
-    frame->setText(tag_value);
-    f->ID3v2Tag()->addFrame(frame);
-    return 1;
-}
-
-int add_tag_mp3(TagLib::MPEG::File* f, string tag_name, int tag_value)
-{
-    stringstream ss;
-    ss << tag_value;
-    return add_tag_mp3(f, tag_name, ss.str());
-}
-
-/** Remove all existing frames to ensure only one id3 tag block
- * @param TagLib::MPEG::File* f
- * return void
- */
-void remove_all_frames_mp3(TagLib::MPEG::File* f)
-{
-    const TagLib::ID3v2::FrameList& frameList = f->ID3v2Tag()->frameList();
-    for (TagLib::ID3v2::FrameList::ConstIterator it = frameList.begin();
-         it != frameList.end();) {
-        f->ID3v2Tag()->removeFrame(*it++, true);
-    }
-}
-
 /** Parse all the tags from the json file and tag them into the audio file
  * @parm json::Object* json_obj
  * @param Taglib::MPEG::File* f
  * return int
  */
-int tag_from_json_mp3(json::Object* json_obj,TagLib::MPEG::File* f)
+int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
 {
     for (json::Object::const_iterator i = json_obj->begin(); i != json_obj->end(); ++i) {
         if (i.key() == "tags") {
@@ -332,7 +341,7 @@ int tag_from_json_mp3(json::Object* json_obj,TagLib::MPEG::File* f)
                         f->ID3v2Tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
                     }
-                    else if (!add_tag_mp3(f, tag_name, tag_value))
+                    else if (!add_tag(f, tag_name, tag_value))
                     {
                         cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
                         return 0;
@@ -341,7 +350,7 @@ int tag_from_json_mp3(json::Object* json_obj,TagLib::MPEG::File* f)
                 else if (j->type() == json::TYPE_INTEGER) {
                     int tag_value = dynamic_cast<const json::Integer &>(*j).value;
                     cout << tag_name << endl;
-                    add_tag_mp3(f, tag_name, tag_value);
+                    add_tag(f, tag_name, tag_value);
                 }
                 else if (j->type() == json::TYPE_OBJECT) {
                     if (tag_name == "APIC") {
@@ -350,7 +359,7 @@ int tag_from_json_mp3(json::Object* json_obj,TagLib::MPEG::File* f)
                         string image_file_path = dynamic_cast<const json::String &>(apic.getValue("file")).value();
                         string mime_type = get_mime_type(image_file_path);
 
-                        if (!add_image_tag_mp3(f, tag_name, image_file_path, image_type)) {
+                        if (!add_image_tag(f, tag_name, image_file_path, image_type)) {
                             cerr << "Image frame blew up!" << endl;
                             return 0;
                         }
@@ -362,6 +371,8 @@ int tag_from_json_mp3(json::Object* json_obj,TagLib::MPEG::File* f)
     f->save();
     return 1;
 }
+
+
 
 int main(int argc, char **argv)
 {
@@ -415,7 +426,7 @@ int main(int argc, char **argv)
 
         if (media_type == "mp3" || strcmp(".mp3", file_ext) == 0) {
             TagLib::MPEG::File f(file_name.c_str());
-            if (tag_from_json_mp3(json_obj, &f)) {
+            if (tag_from_json(json_obj, &f)) {
                 return 0;
             }
         } else {
