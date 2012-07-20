@@ -13,6 +13,7 @@ using namespace std;
 #include <id3v2header.h>
 #include <id3v2tag.h>
 #include <id3v2frame.h>
+#include <commentsframe.h>
 #include <attachedpictureframe.h>
 #include <textidentificationframe.h>
 #include <fileref.h>
@@ -182,7 +183,7 @@ int add_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string tag_value)
     cout << "Tagging " << id << endl;
 
     // Clean up old frames before replacing it
-    f->tag()->removeFrames(id); 
+    f->tag()->removeFrames(id);
 
     TagLib::ID3v2::Frame* frame;
     frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
@@ -209,7 +210,7 @@ int add_tag(TagLib::MPEG::File* f, string tag_name, string tag_value)
     cout << "Tagging " << id << endl;
 
     // Clean up old frames before replacing it
-    f->ID3v2Tag()->removeFrames(id); 
+    f->ID3v2Tag()->removeFrames(id);
 
     TagLib::ID3v2::Frame* frame;
     frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
@@ -260,7 +261,7 @@ void remove_all_frames(TagLib::MPEG::File* f)
 
 
 
-// ------------------- tag_from_json overloads ---------------- // 
+// ------------------- tag_from_json overloads ---------------- //
 
 /** Parse all the tags from the json file and tag them into the audio file
  * @parm json::Object* json_obj
@@ -279,8 +280,20 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                     cout << tag_name << endl;
                     // Special case for comment and genres
                     if (tag_name == "COMM") {
-                        f->tag()->setComment(tag_value);
-                        cout << "Setting Comment(COM): " << tag_value << endl;
+                        // Cannot use setComment wrapper without first setting the
+                        // language for the comment frame.
+                        //
+                        // Clean up old frames before replacing it
+                        TagLib::ByteVector frameId(tag_name.c_str(), 4); // Only use the first 4 chars for the id
+                        f->tag()->removeFrames(frameId);
+
+                        TagLib::ID3v2::CommentsFrame *commFrame;
+                        commFrame = new TagLib::ID3v2::CommentsFrame(TagLib::String::UTF8);
+                        commFrame->setLanguage(TagLib::ByteVector("eng", 3));
+                        commFrame->setText(tag_value);
+
+                        f->tag()->addFrame(commFrame);
+                        cout << "Setting Comment(COMM): " << tag_value << endl;
                     }
                     else if (tag_name == "GENR") {
                         f->tag()->setGenre(tag_value);
@@ -334,7 +347,19 @@ int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
                     cout << tag_name << endl;
                     // Special case for comment and genres
                     if (tag_name == "COMM") {
-                        f->ID3v2Tag()->setComment(tag_value);
+                        // Cannot use setComment wrapper without first setting the
+                        // language for the comment frame.
+                        //
+                        // Clean up old frames before replacing it
+                        TagLib::ByteVector frameId(tag_name.c_str(), 4); // Only use the first 4 chars for the id
+                        f->ID3v2Tag()->removeFrames(frameId);
+
+                        TagLib::ID3v2::CommentsFrame *commFrame;
+                        commFrame = new TagLib::ID3v2::CommentsFrame(TagLib::String::UTF8);
+                        commFrame->setLanguage(TagLib::ByteVector("eng", 3));
+                        commFrame->setText(tag_value);
+
+                        f->ID3v2Tag()->addFrame(commFrame);
                         cout << "Setting Comment(COM): " << tag_value << endl;
                     }
                     else if (tag_name == "GENR") {
@@ -389,7 +414,7 @@ int main(int argc, char **argv)
         return 1;
     }
     while(42) {
-        return_code = getopt_long(argc, argv, "hf:t:m:", long_options, 
+        return_code = getopt_long(argc, argv, "hf:t:m:", long_options,
                         &option_index);
         if(return_code == -1)
             break;
@@ -415,7 +440,7 @@ int main(int argc, char **argv)
                 return 1;
         }
     }
-    
+
     const char *file_ext = strrchr(file_name.c_str(), '.');
 
     print_file_info(file_name);
