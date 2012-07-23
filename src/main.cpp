@@ -74,7 +74,7 @@ string read_file(string file_name)
  */
 void usage(char **argv)
 {
-    cerr << "Usage: " << *argv << " -h --help -f --file [file] -t --tags [file] -m --media [type]" << endl;
+    cerr << "Usage: " << *argv << " -h --help -f --file [file] -t --tags [file]" << endl;
 }
 
 /** Print simple info from the audio file
@@ -186,7 +186,7 @@ int add_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string tag_value)
     f->tag()->removeFrames(id);
 
     TagLib::ID3v2::Frame* frame;
-    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
+    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::UTF8);
     if( !frame)
     {
         cerr << "Frame blew up!" << endl;
@@ -213,7 +213,7 @@ int add_tag(TagLib::MPEG::File* f, string tag_name, string tag_value)
     f->ID3v2Tag()->removeFrames(id);
 
     TagLib::ID3v2::Frame* frame;
-    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::Latin1);
+    frame = new TagLib::ID3v2::TextIdentificationFrame(id, TagLib::String::UTF8);
     if( !frame)
     {
         cerr << "Frame blew up!" << endl;
@@ -239,6 +239,8 @@ int add_tag(TagLib::MPEG::File* f, string tag_name, int tag_value)
  */
 void remove_all_frames(TagLib::RIFF::AIFF::File* f)
 {
+    // No helper method for RIFF/AIFF to remove frames, so we'll just
+    // have to iterate over them all and remove them manually.
     const TagLib::ID3v2::FrameList& frameList = f->tag()->frameList();
     for (TagLib::ID3v2::FrameList::ConstIterator it = frameList.begin();
          it != frameList.end();) {
@@ -252,11 +254,12 @@ void remove_all_frames(TagLib::RIFF::AIFF::File* f)
  */
 void remove_all_frames(TagLib::MPEG::File* f)
 {
-    const TagLib::ID3v2::FrameList& frameList = f->ID3v2Tag()->frameList();
-    for (TagLib::ID3v2::FrameList::ConstIterator it = frameList.begin();
-         it != frameList.end();) {
-        f->ID3v2Tag()->removeFrame(*it++, true);
-    }
+    // Need to remove both ID3v2 and ID3v1 frames for MPEG
+    // And, we have a handy helper method to do that for us:
+    f->strip();
+    
+    // Create the ID3v2 tag to avoid segfault?
+    f->ID3v2Tag(true);
 }
 
 
@@ -282,11 +285,6 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                     if (tag_name == "COMM") {
                         // Cannot use setComment wrapper without first setting the
                         // language for the comment frame.
-                        //
-                        // Clean up old frames before replacing it
-                        TagLib::ByteVector frameId(tag_name.c_str(), 4); // Only use the first 4 chars for the id
-                        f->tag()->removeFrames(frameId);
-
                         TagLib::ID3v2::CommentsFrame *commFrame;
                         commFrame = new TagLib::ID3v2::CommentsFrame(TagLib::String::UTF8);
                         commFrame->setLanguage(TagLib::ByteVector("eng", 3));
@@ -347,18 +345,14 @@ int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
                     cout << tag_name << endl;
                     // Special case for comment and genres
                     if (tag_name == "COMM") {
-                        // Cannot use setComment wrapper without first setting the
-                        // language for the comment frame.
-                        //
-                        // Clean up old frames before replacing it
-                        TagLib::ByteVector frameId(tag_name.c_str(), 4); // Only use the first 4 chars for the id
-                        f->ID3v2Tag()->removeFrames(frameId);
-
+                        // Cannot use setComment() wrapper without first setting the
+                        // language for the comment frame, so we create the comment frame
+                        // instance manually.
                         TagLib::ID3v2::CommentsFrame *commFrame;
                         commFrame = new TagLib::ID3v2::CommentsFrame(TagLib::String::UTF8);
                         commFrame->setLanguage(TagLib::ByteVector("eng", 3));
                         commFrame->setText(tag_value);
-
+                        
                         f->ID3v2Tag()->addFrame(commFrame);
                         cout << "Setting Comment(COM): " << tag_value << endl;
                     }
@@ -406,7 +400,7 @@ int main(int argc, char **argv)
     int option_index = 0;
     string file_name;
     string tag_file;
-    string media_type;
+    const char *file_ext;
 
     if(argc < 3)
     {
@@ -426,14 +420,11 @@ int main(int argc, char **argv)
             case 'f': /* --file */
                 cout << "Tagging file: " << optarg << endl;
                 file_name = optarg;
+                file_ext = strrchr(file_name.c_str(), '.');
                 break;
             case 't': /* --tags */
                 cout << "Using tag file: " << optarg << endl;
                 tag_file = optarg;
-                break;
-            case 'm': /* --media */
-                cout << "Using media type: " << optarg << endl;
-                media_type = optarg;
                 break;
             default: /* ??? */
                 usage(argv);
@@ -441,25 +432,27 @@ int main(int argc, char **argv)
         }
     }
 
-    const char *file_ext = strrchr(file_name.c_str(), '.');
-
     print_file_info(file_name);
     string json_tags = read_file(tag_file);
     try {
         json::Value *json_v = json::parse(json_tags);
         json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
 
-        if (media_type == "mp3" || strcmp(".mp3", file_ext) == 0) {
+        if (strcmp(".mp3", file_ext) == 0) {
             TagLib::MPEG::File f(file_name.c_str());
+            remove_all_frames(&f);
             if (tag_from_json(json_obj, &f)) {
                 return 0;
             }
-        } else {
+        } else if (strcmp(".aif", file_ext) == 0) {
             TagLib::RIFF::AIFF::File f(file_name.c_str());
             remove_all_frames(&f);
             if (tag_from_json(json_obj, &f)) {
                 return 0;
             }
+        } else {
+            cerr << "Unrecognized file format: " << file_ext << endl;
+            return 1;
         }
     }
     catch (runtime_error& e)
