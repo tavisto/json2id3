@@ -400,7 +400,7 @@ int main(int argc, char **argv)
     int option_index = 0;
     string file_name;
     string tag_file;
-    const char *file_ext;
+    string file_ext;
 
     if(argc < 3)
     {
@@ -420,7 +420,7 @@ int main(int argc, char **argv)
             case 'f': /* --file */
                 cout << "Tagging file: " << optarg << endl;
                 file_name = optarg;
-                file_ext = strrchr(file_name.c_str(), '.');
+                file_ext = file_name.substr(file_name.find_last_of(".") + 1);
                 break;
             case 't': /* --tags */
                 cout << "Using tag file: " << optarg << endl;
@@ -438,13 +438,20 @@ int main(int argc, char **argv)
         json::Value *json_v = json::parse(json_tags);
         json::Object *json_obj = dynamic_cast<json::Object *>(json_v);
 
-        if (strcmp(".mp3", file_ext) == 0) {
+        // Convert file extension to lower case for string comparison
+        int i=0;
+        while (file_ext[i]) {
+            file_ext[i] = tolower(file_ext[i]);
+            i++;
+        }
+        
+        if (file_ext == "mp3") {
             TagLib::MPEG::File f(file_name.c_str());
             remove_all_frames(&f);
             if (tag_from_json(json_obj, &f)) {
                 return 0;
             }
-        } else if (strcmp(".aif", file_ext) == 0) {
+        } else if (file_ext == "aif" || file_ext == "aiff") {
             TagLib::RIFF::AIFF::File f(file_name.c_str());
             remove_all_frames(&f);
             if (tag_from_json(json_obj, &f)) {
