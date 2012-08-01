@@ -120,58 +120,111 @@ string get_mime_type(string filename) {
     }
 }
 
-int add_image_tag(TagLib::RIFF::AIFF::File* f, string tag_name, string image_file_path, unsigned char image_type) {
+int add_image_tag(TagLib::RIFF::AIFF::File* f, string tag_name, json::Array image_list) {
     cout << "Setting " << tag_name << endl;
-    cout << tag_name << endl;
-    f->tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
-    string mime_type = get_mime_type(image_file_path);
-    TagLib::ByteVector image_data = read_file_bytes(image_file_path);
-    cout << "Mime type: " << mime_type << endl;
-    cout << "Image size: " << image_data.size() << " bytes" << endl;
+    
+    if (image_list.size() < 1) {
+        cerr << "No image details found in tag '" << tag_name << endl;
+        return 0;
+    }
 
-    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
-    if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
-        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
-    } else {
-        cerr << "Unknown image type id: " << image_type << endl;
-        return 0;
+    // Loop over each object in the image list.
+    // Expects: { 'type': int (0-20), 'file': string (path) }
+    for (unsigned int i=0; i<image_list.size(); i++) {
+        string file_path;
+        TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
+        TagLib::ByteVector image_data; 
+        unsigned int image_type;
+        string mime_type;
+
+        json::Object image_properties = dynamic_cast<json::Object &>(image_list[i]);
+        
+        file_path = dynamic_cast<const json::String &>(image_properties.getValue("file")).value();
+        mime_type = get_mime_type(file_path);
+        image_data = read_file_bytes(file_path);
+
+        image_type = dynamic_cast<const json::Integer &>(image_properties.getValue("type")).value;
+
+        cout << "----- Image Type " << image_type << " -----" << endl;
+        cout << "Mime type: " << mime_type << endl;
+        cout << "Image size: " << image_data.size() << " bytes" << endl;
+
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
+        
+        if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
+        } else if (image_type == TagLib::ID3v2::AttachedPictureFrame::ColouredFish) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::ColouredFish);
+        } else if (image_type == TagLib::ID3v2::AttachedPictureFrame::PublisherLogo) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::PublisherLogo);
+        } else {
+            cerr << "Unknown image type id: " << image_type << endl;
+            return 0;
+        }
+
+        if (!frame) {
+            cerr << "Image frame blew up!" << endl;
+            return 0;
+        }
+
+        f->tag()->addFrame(frame);
     }
-    if (!frame) {
-        cerr << "Image frame blew up!" << endl;
-        return 0;
-    }
-    f->tag()->addFrame(frame);
+    
     return 1;
 }
 
-/*!
- * Overloaded add_image_tag for MP3 support.
- */
-int add_image_tag(TagLib::MPEG::File* f, string tag_name, string image_file_path, unsigned char image_type) {
+int add_image_tag(TagLib::MPEG::File* f, string tag_name, json::Array image_list) {
     cout << "Setting " << tag_name << endl;
-    cout << tag_name << endl;
-    f->ID3v2Tag()->removeFrames(TagLib::ByteVector(tag_name.c_str(), 4));
-    string mime_type = get_mime_type(image_file_path);
-    TagLib::ByteVector image_data = read_file_bytes(image_file_path);
-    cout << "Mime type: " << mime_type << endl;
-    cout << "Image size: " << image_data.size() << " bytes" << endl;
+    
+    if (image_list.size() < 1) {
+        cerr << "No image details found in tag '" << tag_name << endl;
+        return 0;
+    }
 
-    TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
-    static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
-    if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
-        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
-    } else {
-        cerr << "Unknown image type id: " << image_type << endl;
-        return 0;
+    // Loop over each object in the image list.
+    // Expects: { 'type': int (0-20), 'file': string (path) }
+    for (unsigned int i=0; i<image_list.size(); i++) {
+        string file_path;
+        TagLib::ID3v2::Frame* frame = new TagLib::ID3v2::AttachedPictureFrame();
+        TagLib::ByteVector image_data; 
+        unsigned int image_type;
+        string mime_type;
+
+        json::Object image_properties = dynamic_cast<json::Object &>(image_list[i]);
+        
+        file_path = dynamic_cast<const json::String &>(image_properties.getValue("file")).value();
+        mime_type = get_mime_type(file_path);
+        image_data = read_file_bytes(file_path);
+
+        image_type = dynamic_cast<const json::Integer &>(image_properties.getValue("type")).value;
+
+        cout << "----- Image Type " << image_type << " -----" << endl;
+        cout << "Mime type: " << mime_type << endl;
+        cout << "Image size: " << image_data.size() << " bytes" << endl;
+
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setPicture(image_data);
+        static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setMimeType(mime_type);
+        
+        if (image_type == TagLib::ID3v2::AttachedPictureFrame::FrontCover) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::FrontCover);
+        } else if (image_type == TagLib::ID3v2::AttachedPictureFrame::ColouredFish) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::ColouredFish);
+        } else if (image_type == TagLib::ID3v2::AttachedPictureFrame::PublisherLogo) {
+            static_cast<TagLib::ID3v2::AttachedPictureFrame*>(frame)->setType(TagLib::ID3v2::AttachedPictureFrame::PublisherLogo);
+        } else {
+            cerr << "Unknown image type id: " << image_type << endl;
+            return 0;
+        }
+
+        if (!frame) {
+            cerr << "Image frame blew up!" << endl;
+            return 0;
+        }
+
+        f->ID3v2Tag()->addFrame(frame);
     }
-    if (!frame) {
-        cerr << "Image frame blew up!" << endl;
-        return 0;
-    }
-    f->ID3v2Tag()->addFrame(frame);
+
     return 1;
 }
 
@@ -308,15 +361,12 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                     cout << tag_name << endl;
                     add_tag(f, tag_name, tag_value);
                 }
-                else if (j->type() == json::TYPE_OBJECT) {
+                else if (j->type() == json::TYPE_ARRAY) {
                     if (tag_name == "APIC") {
-                        json::Object apic = dynamic_cast<const json::Object &>(j.value());
-                        unsigned char image_type = dynamic_cast<const json::Integer &>(apic.getValue("type")).value;
-                        string image_file_path = dynamic_cast<const json::String &>(apic.getValue("file")).value();
-                        string mime_type = get_mime_type(image_file_path);
+                        json::Array apic = dynamic_cast<const json::Array &>(j.value());
 
-                        if (!add_image_tag(f, tag_name, image_file_path, image_type)) {
-                            cerr << "Image frame blew up!" << endl;
+                        if (!add_image_tag(f, tag_name, apic)) {
+                            cerr << "APIC image frame blew up!" << endl;
                             return 0;
                         }
                     }
@@ -371,15 +421,12 @@ int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
                     cout << tag_name << endl;
                     add_tag(f, tag_name, tag_value);
                 }
-                else if (j->type() == json::TYPE_OBJECT) {
+                else if (j->type() == json::TYPE_ARRAY) {
                     if (tag_name == "APIC") {
-                        json::Object apic = dynamic_cast<const json::Object &>(j.value());
-                        unsigned char image_type = dynamic_cast<const json::Integer &>(apic.getValue("type")).value;
-                        string image_file_path = dynamic_cast<const json::String &>(apic.getValue("file")).value();
-                        string mime_type = get_mime_type(image_file_path);
+                        json::Array apic = dynamic_cast<const json::Array &>(j.value());
 
-                        if (!add_image_tag(f, tag_name, image_file_path, image_type)) {
-                            cerr << "Image frame blew up!" << endl;
+                        if (!add_image_tag(f, tag_name, apic)) {
+                            cerr << "APIC image frame blew up!" << endl;
                             return 0;
                         }
                     }

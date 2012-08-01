@@ -1,5 +1,10 @@
 { 
     "tags": {
+        "APIC": [
+            { "type": 3, "file": "/tmp/test.jpg" },
+            { "type": 17, "file": "/tmp/test.jpg" },
+            { "type": 20, "file": "/tmp/test.jpg" }
+        ],
         "COMM": "Some comment",
         "GENR": "Genre",
         "TALB": "Album from JSON",
