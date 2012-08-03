@@ -1,0 +1,50 @@
+To get json2id3 running on Mac OS X, first get taglib and jsonlib.  They
+need to be build and installed in some place on the system.  Here's what
+I did when building them:
+
+cd taglib
+cmake -DCMAKE_INSTALL_PREFIX="/Users/ilia.cheishvili/Desktop/build/taglib"
+make
+make install
+;;
+cd libjson
+cmake -DCMAKE_INSTALL_PREFIX="/Users/ilia.cheishvili/Desktop/build/libjson"
+make
+make install
+
+Afterwards, a patch similar to this one needs to be applied to
+CMakeLists.txt:
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index e834993..bfbe1c8 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -16,6 +16,9 @@ include(CPack)
+ # Appends the cmake/modules path inside the MAKE_MODULE_PATH variable which stores the
+ # directories of additional CMake modules (eg MacroOutOfSourceBuild.cmake):
+ set(CMAKE_MODULE_PATH ${json2id3_SOURCE_DIR}/cmake/modules ${CMAKE_MODULE_PATH})
++set(BIN_INSTALL_DIR /Users/ilia.cheishvili/Desktop/build/taglib/bin ${BIN_INSTALL_DIR})
++set(LIBJSON_INCLUDE_DIR /Users/ilia.cheishvili/Desktop/build/libjson/include)
++set(LIBJSON_LIBRARIES /Users/ilia.cheishvili/Desktop/build/libjson/lib/libjson.dylib)
+ 
+ # The macro below forces the build directory to be different from source directory
+ include(MacroOutOfSourceBuild)
+@@ -65,7 +68,6 @@ if (TAGLIB_LIBRARIES AND TAGLIB_CFLAGS)
+   set(CMAKE_REQUIRED_DEFINITIONS ${_CMAKE_REQUIRED_DEFINITIONS_TMP})
+ endif (TAGLIB_LIBRARIES AND TAGLIB_CFLAGS)
+ 
+-set(LIBJSON_LIBRARIES)
+ if(WITH_LIBJSON)
+     find_library(LIBJSON_LIBRARIES NAMES json)
+     find_path(LIBJSON_INCLUDE_DIR json.h PATHS 
+
+The patch sets BIN_INSTALL_DIR, which is where CMake will look for
+taglib-config, a binary that accepts various switches and prints out
+what the various include and library paths are for the given taglib
+installation.  Also, the patch sets LIBJSON_INCLUDE_DIR, which specifies
+where the include files for libjson can be found.  Similarly, it sets
+LIBJSON_LIBRARIES, which is the path to the binary libjson library file.
+The last thing is to remove the empty set() statement for
+LIBJSON_LIBRARIES that happens later in the CMake file, to keep the
+variable from being UNDEFINED.  At this point, everything should build
+and run.
