@@ -41,9 +41,9 @@
         "TSXO": "NEW:SFX_OBJECT",
         "TVNU": "NEW:BP_VENUE",
         "TVOX": "NEW:BP_VOCAL",
+        "UFID": "track-12345",
         "USLT": "This is my song. Rock my world. Tonight. In the club.",
         "WOAF": "http://www.beatport.com/track/12345",
-        "WPUB": "http://www.beaport.com/label/12345",
-        "UFID": "track-12345"
+        "WPUB": "http://www.beaport.com/label/12345"
     }
 }

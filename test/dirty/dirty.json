@@ -36,9 +36,9 @@
         "TSXO": "NEW:SFX_OBJECT_DIRTY",
         "TVNU": "NEW:BP_VENUE_DIRTY",
         "TVOX": "NEW:BP_VOCAL_DIRTY",
+        "UFID": "track-12345_DIRTY",
         "USLT": "Lyrics..._DIRTY",
         "WOAF": "http://www.beatport.com/track/12345_DIRTY",
-        "WPUB": "http://www.beaport.com/label/12345_DIRTY",
-        "UFID": "track-12345_DIRTY"
+        "WPUB": "http://www.beaport.com/label/12345_DIRTY"
     }
 }

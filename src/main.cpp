@@ -13,9 +13,10 @@ using namespace std;
 #include <id3v2header.h>
 #include <id3v2tag.h>
 #include <id3v2frame.h>
-#include <commentsframe.h>
 #include <attachedpictureframe.h>
+#include <commentsframe.h>
 #include <textidentificationframe.h>
+#include <unsynchronizedlyricsframe.h>
 #include <fileref.h>
 #include <tbytevector.h>
 
@@ -334,7 +335,7 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                 if (j->type() == json::TYPE_STRING) {
                     string tag_value = dynamic_cast<const json::String &>(*j).value();
                     cout << tag_name << endl;
-                    // Special case for comment and genres
+                    // Special case for comments
                     if (tag_name == "COMM") {
                         // Cannot use setComment wrapper without first setting the
                         // language for the comment frame.
@@ -346,12 +347,22 @@ int tag_from_json(json::Object* json_obj,TagLib::RIFF::AIFF::File* f)
                         f->tag()->addFrame(commFrame);
                         cout << "Setting Comment(COMM): " << tag_value << endl;
                     }
+                    // Special case for genre
                     else if (tag_name == "GENR") {
                         f->tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
                     }
-                    else if (!add_tag(f, tag_name, tag_value))
-                    {
+                    // Sepcial case for lyrics
+                    else if (tag_name == "USLT") {
+                        TagLib::ID3v2::UnsynchronizedLyricsFrame *lyricsFrame;
+                        lyricsFrame = new TagLib::ID3v2::UnsynchronizedLyricsFrame(TagLib::String::UTF8);
+                        lyricsFrame->setLanguage(TagLib::ByteVector("eng", 3));
+                        lyricsFrame->setText(tag_value);
+
+                        f->tag()->addFrame(lyricsFrame);
+                        cout << "Setting Lyrics(USLT): " << tag_value << endl;
+                    }
+                    else if (!add_tag(f, tag_name, tag_value)) {
                         cerr << "There was a problem with tag: " << tag_name << " value: " << tag_value << endl;
                         return 0;
                     }
@@ -393,7 +404,7 @@ int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
                 if (j->type() == json::TYPE_STRING) {
                     string tag_value = dynamic_cast<const json::String &>(*j).value();
                     cout << tag_name << endl;
-                    // Special case for comment and genres
+                    // Special case for comments
                     if (tag_name == "COMM") {
                         // Cannot use setComment() wrapper without first setting the
                         // language for the comment frame, so we create the comment frame
@@ -402,13 +413,24 @@ int tag_from_json(json::Object* json_obj,TagLib::MPEG::File* f)
                         commFrame = new TagLib::ID3v2::CommentsFrame(TagLib::String::UTF8);
                         commFrame->setLanguage(TagLib::ByteVector("eng", 3));
                         commFrame->setText(tag_value);
-                        
+
                         f->ID3v2Tag()->addFrame(commFrame);
-                        cout << "Setting Comment(COM): " << tag_value << endl;
+                        cout << "Setting Comment(COMM): " << tag_value << endl;
                     }
+                    // Special case for genre
                     else if (tag_name == "GENR") {
                         f->ID3v2Tag()->setGenre(tag_value);
                         cout << "Setting GENRE: " << tag_value << endl;
+                    }
+                    // Sepcial case for lyrics
+                    if (tag_name == "USLT") {
+                        TagLib::ID3v2::UnsynchronizedLyricsFrame *lyricsFrame;
+                        lyricsFrame = new TagLib::ID3v2::UnsynchronizedLyricsFrame(TagLib::String::UTF8);
+                        lyricsFrame->setLanguage(TagLib::ByteVector("eng", 3));
+                        lyricsFrame->setText(tag_value);
+
+                        f->ID3v2Tag()->addFrame(lyricsFrame);
+                        cout << "Setting Lyrics(USLT): " << tag_value << endl;
                     }
                     else if (!add_tag(f, tag_name, tag_value))
                     {

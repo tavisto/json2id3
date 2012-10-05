@@ -2,7 +2,9 @@
 C++ Id3 Tag utility to write id3 tags to an audio file. 
 The tags can be read from a json file.
 
-Currenty this only works with AIFF files. 
+Currently supports AIFF, and MP3 files.
+ - text encoding, when required, is hard-coded to UTF8
+ - text languate, when required, is hard-coded to 'eng'
 
 This requires both taglib and jsonlib. 
 
