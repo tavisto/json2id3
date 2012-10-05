@@ -48,3 +48,7 @@ The last thing is to remove the empty set() statement for
 LIBJSON_LIBRARIES that happens later in the CMake file, to keep the
 variable from being UNDEFINED.  At this point, everything should build
 and run.
+
+If you receive errors regarding dynamic libraries, try this:
+export DYLD_LIBRARY_PATH=/Users/ilia.cheishvili/Desktop/build/taglib/lib: \
+  /Users/ilia.cheishvili/Desktop/build/libjson/lib
